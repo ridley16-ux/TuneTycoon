@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tune Tycoon</title>
+  <style>
+    :root{--bg:#0b1022;--panel:#151d3b;--text:#eef1ff;--muted:#aab4e8;--accent:#74e2ff;--ok:#6dff9f;--warn:#ffd166;--bad:#ff5d73}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:monospace}
+    .app{max-width:540px;margin:0 auto;min-height:100vh;padding:10px;display:flex;flex-direction:column;gap:10px}
+    .card{background:var(--panel);border:1px solid #ffffff22;border-radius:12px;padding:10px}
+    .hidden{display:none!important}
+    h1,h2,p{margin:0 0 8px} h1{font-size:16px;text-transform:uppercase}
+    .row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+    input,select,button,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #ffffff2d;background:#0a0f1d;color:var(--text);font-family:inherit}
+    button{cursor:pointer;background:#27356a;font-weight:700;text-transform:uppercase}
+    button[disabled]{opacity:.4;cursor:not-allowed}
+    .stats{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid #ffffff2d;border-radius:999px;padding:4px 8px;font-size:12px}
+    .skills .line{display:flex;align-items:center;gap:6px;font-size:12px;margin:6px 0}.line b{width:96px}
+    .bar{flex:1;height:8px;border-radius:8px;background:#ffffff1f;overflow:hidden}.fill{height:100%;background:var(--accent);width:0}
+    canvas{width:100%;height:150px;border:1px solid #ffffff2d;border-radius:8px;image-rendering:pixelated}
+    .small{font-size:12px;color:var(--muted)}
+    .log{font-size:12px;color:var(--muted);white-space:pre-wrap;max-height:110px;overflow:auto}
+    .ap{font-weight:700;color:var(--warn)}
+    .season{font-size:12px;color:var(--warn)}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="card"><h1>🎵 Tune Tycoon</h1><div id="header" class="small">Act 1 • Month 1</div></div>
+
+  <section id="create1" class="card">
+    <h2>Talent Show Entry</h2>
+    <div class="row">
+      <div><label class="small">Stage Name</label><input id="stageName" maxlength="24" placeholder="Neon Lark"></div>
+      <div><label class="small">Gender</label><select id="gender"><option>female</option><option>male</option></select></div>
+    </div>
+    <div class="row">
+      <div><label class="small">Biggest Strength</label><select id="strength"><option>adaptability</option><option>creativity</option><option>energy</option><option>work ethic</option><option>likability</option><option>luck</option><option>confidence</option></select></div>
+      <div><label class="small">Song Title</label><input id="songTitle" maxlength="30" placeholder="First Spark"></div>
+    </div>
+    <div class="row">
+      <div><label class="small">Genre</label><select id="genre"></select></div>
+      <div><label class="small">Style</label><select id="style"></select></div>
+      <div><label class="small">Subject</label><select id="subject"></select></div>
+    </div>
+    <button id="nextOutfit">Next: Outfit</button>
+  </section>
+
+  <section id="create2" class="card hidden">
+    <h2>Outfit / Stage Look</h2>
+    <div class="row">
+      <div><label class="small">Outfit</label><select id="outfit"><option value="garage">Garage Grunge</option><option value="country">Country Star</option><option value="pop">Pop Gloss</option><option value="indie">Alt Indie</option></select></div>
+      <div><label class="small">Bio</label><input id="bio" maxlength="40" placeholder="hungry and hopeful"></div>
+    </div>
+    <div class="row"><button id="back">Back</button><button id="perform">Perform Talent Show</button></div>
+  </section>
+
+  <section id="results" class="card hidden">
+    <h2>Talent Show Results</h2>
+    <canvas id="resultsCanvas" width="320" height="120"></canvas>
+    <div class="small">Genre-Style <span id="gsVal">—</span><div class="bar"><div id="gsFill" class="fill"></div></div></div>
+    <div class="small">Genre-Subject <span id="gsubVal">—</span><div class="bar"><div id="gsubFill" class="fill"></div></div></div>
+    <div class="small">Style-Subject <span id="ssubVal">—</span><div class="bar"><div id="ssubFill" class="fill"></div></div></div>
+    <p id="rank">Rank: Hidden…</p>
+    <p id="reward">Rewards: Hidden…</p>
+    <button id="continue" disabled>Continue</button>
+  </section>
+
+  <section id="home" class="card hidden">
+    <div class="stats">
+      <div class="pill">💷 <span id="money"></span></div>
+      <div class="pill">👥 <span id="followers"></span></div>
+      <div class="pill">⭐ <span id="popularity"></span></div>
+      <div class="pill">🧢 <span id="trendiness"></span></div>
+      <div class="pill">AP <span id="ap" class="ap"></span></div>
+    </div>
+    <p id="seasonBanner" class="season"></p>
+    <canvas id="homeCanvas" width="320" height="120"></canvas>
+    <p class="small" id="who"></p>
+
+    <div class="row">
+      <button id="work">Occupation</button>
+      <button id="train">Training</button>
+      <button id="gig">Performance</button>
+      <button id="promo">Promotion</button>
+      <button id="writeSong">Write/Record</button>
+      <button id="releaseSong">Release Single</button>
+    </div>
+
+    <div class="skills">
+      <div class="line"><b>Vocals</b><div class="bar"><div id="vocalsFill" class="fill"></div></div><span id="vocalsVal"></span></div>
+      <div class="line"><b>Instruments</b><div class="bar"><div id="instFill" class="fill"></div></div><span id="instVal"></span></div>
+      <div class="line"><b>Dancing</b><div class="bar"><div id="danceFill" class="fill"></div></div><span id="danceVal"></span></div>
+      <div class="line"><b>Songwriting</b><div class="bar"><div id="writeFill" class="fill"></div></div><span id="writeVal"></span></div>
+      <div class="line"><b>Stage Presence</b><div class="bar"><div id="stageFill" class="fill"></div></div><span id="stageVal"></span></div>
+    </div>
+
+    <div class="card small" id="objectives"></div>
+    <div class="card small" id="fanPersona">No fan persona yet.</div>
+
+    <div class="row">
+      <button id="progress">Progress Month</button>
+      <button id="hireManager">Hire Manager</button>
+      <button id="rename">Change Stage Name</button>
+    </div>
+    <div class="row">
+      <button id="save">Save</button><button id="load">Load</button><button id="export">Export Save</button><button id="import">Import Save</button><button id="mute">SFX ON</button>
+    </div>
+    <div id="log" class="log"></div>
+  </section>
+
+  <section id="dream" class="card hidden"><h2>Dream Over</h2><p id="dreamMsg"></p><button onclick="location.reload()">Restart</button></section>
+
+  <div id="footerMount"></div>
+</div>
+<script>
+(() => {
+const $=id=>document.getElementById(id);
+const SAVE_KEY='tunetycoon_save_v1';
+const AP_PER_MONTH=10;
+const GENRES=['Pop','Indie','Country','Dance','Rock'];
+const STYLES=['Upbeat','Emotional','Gritty','Minimal','Anthemic'];
+const SUBJECTS=['Love','Breakup','Ambition','Heartbreak','Party'];
+GENRES.forEach(v=>$('genre').add(new Option(v,v)));STYLES.forEach(v=>$('style').add(new Option(v,v)));SUBJECTS.forEach(v=>$('subject').add(new Option(v,v)));
+
+let audioCtx;let muted=false;
+function blip(f=440,d=0.06,g=.04){if(muted)return;audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),ga=audioCtx.createGain(),t=audioCtx.currentTime;o.frequency.value=f;o.type='square';ga.gain.setValueAtTime(0.0001,t);ga.gain.exponentialRampToValueAtTime(g,t+0.01);ga.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(ga).connect(audioCtx.destination);o.start(t);o.stop(t+d+.01)}
+
+const state={
+  player:{stageName:'',gender:'female',strength:'creativity',luck:55,money:0,popularity:0,trendiness:5,followers:0,skills:{vocals:1,instruments:1,dancing:1,songwriting:1,stagePresence:1},act:1,month:1,ap:AP_PER_MONTH,cooldowns:{nameChange:0},totalEarnings:0,hasManager:false},
+  songs:[],eventsLog:[],milestones:{talentFirst:false,fanMilestones:{10:false,100:false,1000:false}},
+  talentChoice:null,queuedDrafts:0
+};
+
+const matrices={
+  genre_style:Object.fromEntries(GENRES.map(g=>[g,Object.fromEntries(STYLES.map(s=>[s,(Math.abs(hash(g+s))%21)]))])),
+  genre_subject:Object.fromEntries(GENRES.map(g=>[g,Object.fromEntries(SUBJECTS.map(s=>[s,(Math.abs(hash(g+s+'2'))%21)]))])),
+  style_subject:Object.fromEntries(STYLES.map(st=>[st,Object.fromEntries(SUBJECTS.map(s=>[s,(Math.abs(hash(st+s+'3'))%21)]))]))
+};
+function hash(s){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h)+s.charCodeAt(i)|0;return h;}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+function computeComboBaseScore(genre, style, subject){
+  const gs = matrices.genre_style[genre][style];
+  const gsub = matrices.genre_subject[genre][subject];
+  const ssub = matrices.style_subject[style][subject];
+  const baseScore = gs*0.40 + gsub*0.35 + ssub*0.25;
+  return { gs, gsub, ssub, baseScore };
+}
+
+function resolveReleaseOutcome(player, baseScore){
+  const skillMod = player.skills.songwriting*1.8 + player.skills.vocals*1.2 + player.skills.stagePresence*1.2;
+  const socialMod = player.trendiness*0.12 + player.popularity*0.10 + Math.log10(player.followers+1)*4;
+  const luckMod = (player.luck-50)*0.22;
+  const rng = (Math.random()*16)-8;
+  const finalScore = clamp(baseScore*5 + skillMod + socialMod + luckMod + rng, 0, 100);
+  let tier='Flop'; if(finalScore>=85)tier='Breakout'; else if(finalScore>=70)tier='Hit'; else if(finalScore>=52)tier='Moderate'; else if(finalScore>=35)tier='Meh';
+  const factor={Flop:.4,Meh:.8,Moderate:1.1,Hit:1.6,Breakout:2.4}[tier];
+  const moneyDelta=Math.round((35+player.popularity*0.7)*factor);
+  const popularityDelta=Math.round((tier==='Flop'?-3:2)*factor);
+  const followersDelta=Math.round((20+player.trendiness*2)*factor + (tier==='Flop'?-20:0));
+  return { finalScore, tier, moneyDelta, popularityDelta, followersDelta };
+}
+
+function screen(id){['create1','create2','results','home','dream'].forEach(s=>$(s).classList.toggle('hidden',s!==id));}
+function seasonMod(month){const m=((month-1)%12)+1; if(m>=5&&m<=7) return {txt:'Festival season active (+gig gains)',gig:1.35,release:1}; if(m===10) return {txt:'Awards season active (+release boost)',gig:1,release:1.2}; if(m===12) return {txt:'Christmas #1 window (+release volatility)',gig:1,release:1.35}; return {txt:'',gig:1,release:1};}
+function log(t){state.eventsLog.unshift({month:state.player.month,type:'log',title:t});state.eventsLog=state.eventsLog.slice(0,20);$('log').textContent=state.eventsLog.map(e=>`M${e.month}: ${e.title}`).join('\n');}
+
+function renderCanvas(id,act){const c=$(id),x=c.getContext('2d');x.imageSmoothingEnabled=false;x.fillStyle=act<3?'#1a2448':'#263a70';x.fillRect(0,0,c.width,c.height);x.fillStyle='#0a1025';x.fillRect(0,90,320,30);x.fillStyle='#eaf1ff';x.fillRect(42,55,14,24);x.fillRect(58,60,8,16);x.fillStyle='#8fb4ff';x.fillRect(80,62,2,25);}
+function updateUI(){
+  const p=state.player; $('header').textContent=`Act ${p.act} • Month ${p.month}`;
+  $('money').textContent='£'+Math.floor(p.money); $('followers').textContent=Math.floor(p.followers); $('popularity').textContent=Math.floor(p.popularity); $('trendiness').textContent=Math.floor(p.trendiness); $('ap').textContent=p.ap;
+  $('who').textContent=`${p.stageName||'Unnamed'} • ${$('bio').value||'newcomer'} • drafts:${state.queuedDrafts}`;
+  const s=seasonMod(p.month); $('seasonBanner').textContent=s.txt;
+  const map=[['vocals', 'vocalsFill','vocalsVal'],['instruments','instFill','instVal'],['dancing','danceFill','danceVal'],['songwriting','writeFill','writeVal'],['stagePresence','stageFill','stageVal']];
+  map.forEach(([k,f,v])=>{$(f).style.width=(p.skills[k]*10)+'%'; $(v).textContent=p.skills[k];});
+  const skill5=Object.values(p.skills).filter(v=>v>=5).length;
+  $('objectives').textContent=`Act1: skills 5+ ${skill5}/2 | earnings £${Math.floor(p.totalEarnings)}/500 | talent #1 ${state.milestones.talentFirst?'✅':'⏳'}\nAct2: singles ${state.songs.filter(s=>s.released).length}/3 | manager ${p.hasManager?'✅':'⏳'} | followers ${Math.floor(p.followers)}/1000\nDeadline: month ${p.month}/36`;
+  renderCanvas('homeCanvas',p.act);
+}
+function checkPersona(){const p=state.player;const thresholds=[10,100,1000];thresholds.forEach(t=>{if(!state.milestones.fanMilestones[t]&&p.followers>=t){state.milestones.fanMilestones[t]=true;const txt=t===10?'likes catchy hooks':t===100?'loves emotional storytelling':'expects polished star energy';$('fanPersona').textContent=`Fan persona unlocked (${t}): Your average fan ${txt}.`;log(`Fan milestone ${t} reached.`);}})}
+
+function consumeAP(n){if(state.player.ap<n){log('Not enough AP this month.');return false;} state.player.ap-=n; return true;}
+
+$('nextOutfit').onpointerdown=()=>{state.player.stageName=$('stageName').value.trim()||'Unnamed';state.player.gender=$('gender').value;state.player.strength=$('strength').value;state.talentChoice={genre:$('genre').value,style:$('style').value,subject:$('subject').value,title:$('songTitle').value||'Untitled'};blip(600);screen('create2');};
+$('back').onpointerdown=()=>screen('create1');
+
+function stagedRevealAnimation(combo,outcome){
+  const bars=[['gsFill','gsVal',combo.gs],['gsubFill','gsubVal',combo.gsub],['ssubFill','ssubVal',combo.ssub]];
+  bars.forEach(([f,v])=>{$(f).style.width='0%';$(v).textContent='—'});$('rank').textContent='Rank: Hidden…';$('reward').textContent='Rewards: Hidden…';$('continue').disabled=true;
+  let i=0,p=0;
+  function frame(){
+    if(i<bars.length){p+=1.5;const tgt=bars[i][2]*5;$(bars[i][0]).style.width=Math.min(p,tgt)+'%';$(bars[i][1]).textContent=Math.round(Math.min(p,tgt)/5)+'/20'; if(p>=tgt){i++;p=0;blip(500+i*120);} requestAnimationFrame(frame); return;}
+    $('rank').textContent=`Rank: #${outcome.rank}`; $('reward').textContent=`Rewards: £${outcome.prize}`; $('continue').disabled=false; blip(880,.1,.06);
+  }
+  requestAnimationFrame(frame);
+}
+
+$('perform').onpointerdown=()=>{
+  const outfit=$('outfit').value; state.player.trendiness={garage:7,country:11,pop:14,indie:10}[outfit]||8;
+  const combo=computeComboBaseScore(state.talentChoice.genre,state.talentChoice.style,state.talentChoice.subject);
+  const rel=resolveReleaseOutcome(state.player,combo.baseScore);
+  const rank=rel.finalScore>=82?1:rel.finalScore>=70?2:rel.finalScore>=58?3:4;
+  const prize=rank===1?500:rank===2?150:rank===3?50:0;
+  state.player.money+=prize; state.player.totalEarnings+=prize; state.player.popularity+=Math.max(3,Math.round(rel.finalScore/10)); state.player.followers+=Math.round(rel.finalScore*1.7);
+  state.milestones.talentFirst=rank===1; state.player._talentRank=rank;
+  renderCanvas('resultsCanvas',1); screen('results');stagedRevealAnimation(combo,{rank,prize});
+};
+$('continue').onpointerdown=()=>{screen('home');updateUI();};
+
+$('work').onpointerdown=()=>{if(!consumeAP(2))return;const cut=state.player.hasManager?0.9:1;const pay=Math.round((70+Math.random()*30)*cut);state.player.money+=pay;state.player.totalEarnings+=pay;state.player.popularity+=1;log(`Worked part-time +£${pay}`);updateUI();};
+$('train').onpointerdown=()=>{if(!consumeAP(2))return;const cost=35;if(state.player.money<cost){log('Need money for training.');return;}state.player.money-=cost;const keys=Object.keys(state.player.skills);const k=keys[Math.floor(Math.random()*keys.length)];state.player.skills[k]=clamp(state.player.skills[k]+1,1,10);if(state.player.hasManager&&Math.random()<.3){state.player.skills.songwriting=clamp(state.player.skills.songwriting+1,1,10);log('Manager auto-scheduled bonus songwriting session.');}log(`Training ${k} +1 (−£${cost})`);updateUI();};
+$('gig').onpointerdown=()=>{if(!consumeAP(2))return;const s=seasonMod(state.player.month);const pop=Math.round((5+Math.random()*6)*s.gig);const earn=Math.round((30+Math.random()*30)*(state.player.hasManager?0.85:1));state.player.popularity+=pop;state.player.money+=earn;state.player.totalEarnings+=earn;state.player.followers+=Math.round(pop*4);if(Math.random()<.2){state.player.popularity+=5;log('Popup event: viral interview boosted your image.');}log(`Gig: +${pop} popularity, +£${earn}`);updateUI();checkPersona();};
+$('promo').onpointerdown=()=>{if(!consumeAP(2))return;const cost=25;if(state.player.money<cost){log('Promo failed (insufficient funds).');return;}state.player.money-=cost;state.player.followers+=Math.round(45+Math.random()*45);state.player.trendiness=clamp(state.player.trendiness+3,0,100);if(Math.random()<.2)state.player.popularity-=2;log('Promotion run executed.');updateUI();checkPersona();};
+$('writeSong').onpointerdown=()=>{if(!consumeAP(2))return;state.queuedDrafts++;state.player.skills.songwriting=clamp(state.player.skills.songwriting+1,1,10);log('Drafted a single.');updateUI();};
+$('releaseSong').onpointerdown=()=>{if(!consumeAP(2))return;if(state.queuedDrafts<1){log('No draft to release.');return;} const g=GENRES[Math.floor(Math.random()*GENRES.length)],st=STYLES[Math.floor(Math.random()*STYLES.length)],su=SUBJECTS[Math.floor(Math.random()*SUBJECTS.length)];const base=computeComboBaseScore(g,st,su);const season=seasonMod(state.player.month);const out=resolveReleaseOutcome(state.player,base.baseScore*season.release);state.player.money+=out.moneyDelta*(state.player.hasManager?0.85:1);state.player.totalEarnings+=out.moneyDelta;state.player.popularity=clamp(state.player.popularity+out.popularityDelta,0,9999);state.player.followers=clamp(state.player.followers+out.followersDelta,0,999999);state.songs.push({id:Date.now(),title:`Single ${state.songs.length+1}`,genre:g,style:st,subject:su,qualityScore:out.finalScore,released:true,streams:Math.round(out.finalScore*100),monthlyRevenue:Math.round(out.moneyDelta/4)});state.queuedDrafts--;log(`Released single (${out.tier}) score ${Math.round(out.finalScore)}.`);updateUI();checkPersona();};
+
+$('hireManager').onpointerdown=()=>{const singles=state.songs.filter(s=>s.released).length;if(state.player.hasManager){log('Manager already hired.');return;}if(singles<3||state.player.followers<1000||state.player.money<250){log('Need 3 singles, 1000 followers, and £250 to hire manager.');return;}state.player.hasManager=true;state.player.money-=250;log('Manager hired (takes revenue cut).');updateUI();};
+$('rename').onpointerdown=()=>{if(state.player.month-state.player.cooldowns.nameChange<3){state.player.popularity=Math.max(0,state.player.popularity-8);log('Name changed too soon: popularity penalty.');}const n=prompt('New stage name?');if(n&&n.trim()){state.player.stageName=n.trim();state.player.cooldowns.nameChange=state.player.month;log(`Stage name changed to ${state.player.stageName}.`);}updateUI();};
+
+$('progress').onpointerdown=()=>{state.player.month++;state.player.ap=AP_PER_MONTH;state.player.trendiness=clamp(state.player.trendiness+(Math.random()*6-3),0,100);if(state.player.month>36 && !(state.songs.filter(s=>s.released).length>=3 && state.player.hasManager && state.player.followers>=1000)){ $('dreamMsg').textContent='You failed to complete Act 2 by month 36.';screen('dream');return;}
+  const act1=(Object.values(state.player.skills).filter(v=>v>=5).length>=2 && state.player.totalEarnings>=500 && state.milestones.talentFirst);
+  if(state.player.act===1&&act1){state.player.act=2;log('Promoted to Act 2: Breakout Artist.');}
+  const act2=(state.songs.filter(s=>s.released).length>=3 && state.player.hasManager && state.player.followers>=1000);
+  if(state.player.act===2&&act2){state.player.act=3;log('Promoted to Act 3: #1 Artist.');}
+  log('Month advanced.');updateUI();};
+
+function save(){localStorage.setItem(SAVE_KEY,JSON.stringify(state));log('Saved to localStorage.');}
+function load(){const raw=localStorage.getItem(SAVE_KEY);if(!raw)return;Object.assign(state,JSON.parse(raw));log('Loaded save.');}
+$('save').onpointerdown=save; $('load').onpointerdown=()=>{load();screen('home');updateUI();};
+$('export').onpointerdown=()=>{navigator.clipboard?.writeText(JSON.stringify(state));log('Save exported to clipboard.');};
+$('import').onpointerdown=()=>{const s=prompt('Paste save JSON');if(!s)return;try{Object.assign(state,JSON.parse(s));log('Save imported.');screen('home');updateUI();}catch{log('Invalid JSON import.');}};
+$('mute').onpointerdown=()=>{muted=!muted;$('mute').textContent=muted?'SFX OFF':'SFX ON'};
+
+(async()=>{try{const r=await fetch('assets/footer.html');$('footerMount').innerHTML=await r.text();}catch{$('footerMount').innerHTML='<div class="small">Version unavailable</div>';}})();
+screen('create1');updateUI();
+})();
+</script>
+</body>
+</html>
